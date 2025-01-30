@@ -620,6 +620,11 @@ void ull_sync_setup_addr_check(struct ll_scan_set *scan, uint8_t addr_type,
 
 			/* Address matched */
 			scan->periodic.state = LL_SYNC_STATE_ADDR_MATCH;
+
+		/* Not a match in the accept list */
+		} else {
+			/* Reset state */
+			scan->periodic.state = LL_SYNC_STATE_IDLE;
 		}
 
 	/* Check with explicitly supplied address */
@@ -637,6 +642,11 @@ void ull_sync_setup_addr_check(struct ll_scan_set *scan, uint8_t addr_type,
 			/* Identity address matched */
 			scan->periodic.state = LL_SYNC_STATE_ADDR_MATCH;
 		}
+
+	/* Not an explicit address or resolvable address match */
+	} else {
+		/* Reset state */
+		scan->periodic.state = LL_SYNC_STATE_IDLE;
 	}
 }
 
