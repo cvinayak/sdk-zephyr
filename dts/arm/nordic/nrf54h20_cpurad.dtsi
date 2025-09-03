@@ -47,6 +47,10 @@ wdt011: &cpurad_wdt011 {};
 	};
 };
 
+&bt_hci_controller {
+	status = "disabled";
+};
+
 &cpurad_ppb {
 	compatible = "simple-bus";
 	ranges;
