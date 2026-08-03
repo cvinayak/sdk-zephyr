@@ -295,6 +295,7 @@ struct bt_hci_evt_vs_le_advertising_info {
 	bt_addr_le_t addr;
 	uint8_t      length;
 	uint8_t      data[0];
+
 } __packed;
 struct bt_hci_evt_vs_le_advertising_report {
 	uint8_t num_reports;

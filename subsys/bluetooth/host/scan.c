@@ -1684,7 +1684,7 @@ void bt_hci_le_vs_df_connectionless_iq_report(struct net_buf *buf)
 #endif /* defined(CONFIG_BT_PER_ADV_SYNC) */
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 
-void bt_hci_le_adv_report(struct net_buf *buf)
+static void le_adv_report(struct net_buf *buf, bool has_chan_idx)
 {
 	uint8_t num_reports = net_buf_pull_u8(buf);
 	struct bt_hci_evt_le_advertising_info *evt;
@@ -1695,6 +1695,7 @@ void bt_hci_le_adv_report(struct net_buf *buf)
 
 	while (num_reports--) {
 		struct bt_le_scan_recv_info adv_info;
+		uint16_t evt_len_expected;
 
 		if (!explicit_scan && !conn_scan) {
 			/* The application has not requested explicit scan, so it is not expecting
@@ -1717,25 +1718,51 @@ void bt_hci_le_adv_report(struct net_buf *buf)
 
 		evt = net_buf_pull_mem(buf, sizeof(*evt));
 
-		if (buf->len < evt->length + sizeof(adv_info.rssi)) {
+		evt_len_expected = evt->length + sizeof(adv_info.rssi);
+
+#if defined(CONFIG_BT_HCI_VS_ADV_REPORT_CHAN_IDX)
+		if (has_chan_idx) {
+			evt_len_expected += sizeof(adv_info.chan_idx);
+		}
+#endif /* CONFIG_BT_HCI_VS_ADV_REPORT_CHAN_IDX */
+
+		if (buf->len < evt_len_expected) {
 			LOG_ERR("Unexpected end of buffer");
 			break;
 		}
 
-		adv_info.primary_phy = BT_GAP_LE_PHY_1M;
-		adv_info.secondary_phy = 0;
-		adv_info.tx_power = BT_GAP_TX_POWER_INVALID;
-		adv_info.rssi = evt->data[evt->length];
 		adv_info.sid = BT_GAP_SID_INVALID;
-		adv_info.interval = 0U;
 
+#if defined(CONFIG_BT_HCI_VS_ADV_REPORT_CHAN_IDX)
+		if (has_chan_idx) {
+			adv_info.chan_idx = evt->data[evt->length + 1U];
+		} else {
+			adv_info.chan_idx = UINT8_MAX;
+		}
+#endif /* CONFIG_BT_HCI_VS_ADV_REPORT_CHAN_IDX */
+
+		adv_info.rssi = evt->data[evt->length];
+		adv_info.tx_power = BT_GAP_TX_POWER_INVALID;
 		adv_info.adv_type = evt->evt_type;
 		adv_info.adv_props = get_adv_props_legacy(evt->evt_type);
+		adv_info.interval = 0U;
+		adv_info.primary_phy = BT_GAP_LE_PHY_1M;
+		adv_info.secondary_phy = 0;
 
 		le_adv_recv(&evt->addr, &adv_info, &buf->b, evt->length);
 
-		net_buf_pull(buf, evt->length + sizeof(adv_info.rssi));
+		net_buf_pull(buf, evt_len_expected);
 	}
+}
+
+void bt_hci_le_adv_report(struct net_buf *buf)
+{
+	le_adv_report(buf, false);
+}
+
+void bt_hci_le_vs_adv_report(struct net_buf *buf)
+{
+	le_adv_report(buf, true);
 }
 
 static bool valid_le_scan_param(const struct bt_le_scan_param *param)

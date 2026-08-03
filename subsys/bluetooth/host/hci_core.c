@@ -2896,6 +2896,10 @@ static const struct event_handler vs_events[] = {
 	EVENT_HANDLER(BT_HCI_EVT_VS_LE_CONNECTION_IQ_REPORT, bt_hci_le_vs_df_connection_iq_report,
 		      sizeof(struct bt_hci_evt_vs_le_connection_iq_report)),
 #endif /* CONFIG_BT_DF_VS_CONN_IQ_REPORT_16_BITS_IQ_SAMPLES */
+#if defined(CONFIG_BT_HCI_VS_ADV_REPORT_CHAN_IDX)
+	EVENT_HANDLER(BT_HCI_EVT_VS_LE_ADV_REPORT, bt_hci_le_vs_adv_report,
+		      sizeof(struct bt_hci_evt_vs_le_advertising_report)),
+#endif /* CONFIG_BT_HCI_VS_ADV_REPORT_CHAN_IDX */
 };
 
 static void hci_vendor_event(struct net_buf *buf)

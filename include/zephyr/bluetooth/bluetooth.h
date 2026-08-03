@@ -2446,6 +2446,11 @@ struct bt_le_scan_recv_info {
 	/** Advertising Set Identifier, valid range @ref BT_GAP_SID_MIN to @ref BT_GAP_SID_MAX. */
 	uint8_t sid;
 
+#if defined(CONFIG_BT_HCI_VS_ADV_REPORT_CHAN_IDX)
+	/** Advertising channel index the packet was received on. */
+	uint8_t chan_idx;
+#endif /* CONFIG_BT_HCI_VS_ADV_REPORT_CHAN_IDX */
+
 	/** @brief Strength of advertiser signal in dBm.
 	 *
 	 *  Range: -127 to +20. May be set to @ref BT_GAP_RSSI_INVALID when the value
