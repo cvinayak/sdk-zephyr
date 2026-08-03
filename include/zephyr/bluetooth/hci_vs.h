@@ -228,6 +228,13 @@ struct bt_hci_cp_vs_set_min_num_used_chans {
 	uint8_t  min_used_chans;
 } __packed;
 
+#define BT_HCI_VS_LE_ADV_REPORT_CHAN_IDX_REPORTS_DISABLED     0x00
+#define BT_HCI_VS_LE_ADV_REPORT_CHAN_IDX_REPORTS_ENABLED      0x01
+#define BT_HCI_OP_VS_SET_LE_ADV_REPORT_CHAN_IDX_REPORTS       BT_OP(BT_OGF_VS, 0x0013)
+struct bt_hci_cp_vs_set_le_adv_report_chan_idx_reports {
+	uint8_t  enable;
+} __packed;
+
 /* Events */
 
 struct bt_hci_evt_vs {
@@ -282,6 +289,18 @@ struct bt_hci_evt_vs_scan_req_rx {
 	int8_t         rssi;
 } __packed;
 
+#define BT_HCI_EVT_VS_LE_ADV_REPORT            0x07
+struct bt_hci_evt_vs_le_advertising_info {
+	uint8_t      evt_type;
+	bt_addr_le_t addr;
+	uint8_t      length;
+	uint8_t      data[0];
+} __packed;
+struct bt_hci_evt_vs_le_advertising_report {
+	uint8_t num_reports;
+	struct bt_hci_evt_vs_le_advertising_info adv_info[0];
+} __packed;
+
 struct bt_hci_le_iq_sample16 {
 	int16_t i;
 	int16_t q;
@@ -324,6 +343,7 @@ struct bt_hci_evt_vs_le_connection_iq_report {
 #define BT_EVT_MASK_VS_SCAN_REQ_RX             BT_EVT_BIT(3)
 #define BT_EVT_MASK_VS_LE_CONNECTIONLESS_IQ_REPORT BT_EVT_BIT(4)
 #define BT_EVT_MASK_VS_LE_CONNECTION_IQ_REPORT	   BT_EVT_BIT(5)
+#define BT_EVT_MASK_VS_LE_ADV_REPORT               BT_EVT_BIT(6)
 
 #define DEFAULT_VS_EVT_MASK                                                                        \
 	BT_EVT_MASK_VS_FATAL_ERROR | BT_EVT_MASK_VS_TRACE_INFO | BT_EVT_MASK_VS_SCAN_REQ_RX |      \
