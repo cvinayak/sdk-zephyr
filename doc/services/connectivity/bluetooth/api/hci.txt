@@ -90,7 +90,8 @@ the controller. By default no vendor events are reported.
 	|       | 3    | Scan Request Received Event                |
 	|       | 4    | Connectionless IQ Report Event             |
 	|       | 5    | Connection IQ Report Event                 |
-	|       | 6    | Reserved                                   |
+	|       | 6    | LE Advertising Report with Channel Index   |
+	|       |      | Event                                      |
 	|       | 7    | Reserved                                   |
 	+-------+------+--------------------------------------------+
 
@@ -1064,6 +1065,49 @@ an HCI Reset command.
 When the Set_USB_Transport_Mode command has completed, a Command Complete
 event shall be generated.
 
+Zephyr Set LE Advertising Report Channel Index Reports Command
+==============================================================
+
+This command configures the report of LE_Advertising_Report_with_Channel_Index
+vendor specific events.
+
++-------------------------------+-------+--------------------+--------------------+
+| Command                       | OCF   | Command            | Return             |
+|                               |       | Parameters         | Parameters         |
++-------------------------------+-------+--------------------+--------------------+
+| Set_LE_Advertising_Report_    | 0x013 | Enable             | Status             |
+| Channel_Index_Reports         |       |                    |                    |
++-------------------------------+-------+--------------------+--------------------+
+
+The Enable parameter indicates whether the Controller shall send the
+LE_Advertising_Report_with_Channel_Index vendor specific event in addition to
+the standard LE Advertising Report event upon receipt of a legacy advertising
+PDU during scanning.
+
+After HCI Reset, this feature is disabled.
+
+	Status:                                         Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x00               | Command succeeded                    |
+	| 0x01-0xFF          | Command failed                       |
+	+--------------------+--------------------------------------+
+
+	Enable:                                         Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x00               | LE Advertising Report with Channel   |
+	|                    | Index reporting disabled             |
+	| 0x01               | LE Advertising Report with Channel   |
+	|                    | Index reporting enabled              |
+	| All other values   | Reserved for future use              |
+	+--------------------+--------------------------------------+
+
+When the Set_LE_Advertising_Report_Channel_Index_Reports command has completed,
+a Command Complete event shall be generated.
+
 Zephyr Vendor Events
 ====================
 
@@ -1726,6 +1770,54 @@ a channel code. The channel parameters content depends on the channel code.
 
 For UART transport (H:4) the type 0xFF shall be used. For USB transport (H:2)
 an extra USB endpoint shall be used.
+
+
+Zephyr LE Advertising Report with Channel Index Event
+=====================================================
+
+This event is a clone of the LE Advertising Report event with an additional
+Channel_Index field after the RSSI field for each report.
+
+The event is only generated when enabled using the
+Set_LE_Advertising_Report_Channel_Index_Reports command, in addition to the
+standard LE Advertising Report event.
+
++-------------------------------+------------+-------------------------------+
+| Event                         | Event Code | Event Parameters              |
++-------------------------------+------------+-------------------------------+
+| LE_Advertising_Report_with_   | 0xFF       | Subevent_Code,                |
+| Channel_Index                 |            | Num_Reports,                  |
+|                               |            | Event_Type[i],                |
+|                               |            | Address_Type[i],              |
+|                               |            | Address[i],                   |
+|                               |            | Length[i],                    |
+|                               |            | Data[i],                      |
+|                               |            | RSSI[i],                      |
+|                               |            | Channel_Index[i]              |
++-------------------------------+------------+-------------------------------+
+
+	Subevent_Code:                                  Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x07               | Subevent code for LE Advertising     |
+	|                    | Report with Channel Index event        |
+	+--------------------+--------------------------------------+
+
+The Num_Reports, Event_Type, Address_Type, Address, Length, Data, and RSSI
+parameters are identical to the LE Advertising Report event defined in
+Bluetooth Core Specification Vol 4, Part E, Section 7.7.65.2.
+
+	Channel_Index:                                  Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 37 to 39           | Channel Index on which the legacy    |
+	|                    | advertising PDU was received         |
+	| All other values   | Reserved for future use              |
+	+--------------------+--------------------------------------+
+
+The event is only reported when unmasked by Set_Event_Mask command.
 
 
 References

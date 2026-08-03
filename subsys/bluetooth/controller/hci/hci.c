@@ -5220,6 +5220,20 @@ static void vs_set_scan_req_reports(struct net_buf *buf, struct net_buf **evt)
 }
 #endif /* CONFIG_BT_CTLR_VS_SCAN_REQ_RX */
 
+#if defined(CONFIG_BT_CTLR_VS_LE_ADV_REPORT_CHAN_IDX)
+static void vs_set_le_adv_report_chan_idx_reports(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_vs_set_le_adv_report_chan_idx_reports *cmd = (void *)buf->data;
+
+	if (cmd->enable) {
+		vs_events_mask |= BT_EVT_MASK_VS_LE_ADV_REPORT;
+	} else {
+		vs_events_mask &= ~BT_EVT_MASK_VS_LE_ADV_REPORT;
+	}
+	*evt = cmd_complete_status(0x00);
+}
+#endif /* CONFIG_BT_CTLR_VS_LE_ADV_REPORT_CHAN_IDX */
+
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
 static void vs_write_tx_power_level(struct net_buf *buf, struct net_buf **evt)
 {
@@ -5796,6 +5810,12 @@ int hci_vendor_cmd_handle_common(uint16_t ocf, struct net_buf *cmd,
 		vs_set_min_used_chans(cmd, evt);
 		break;
 #endif /* CONFIG_BT_CTLR_MIN_USED_CHAN && CONFIG_BT_PERIPHERAL */
+
+#if defined(CONFIG_BT_CTLR_VS_LE_ADV_REPORT_CHAN_IDX)
+	case BT_OCF(BT_HCI_OP_VS_SET_LE_ADV_REPORT_CHAN_IDX_REPORTS):
+		vs_set_le_adv_report_chan_idx_reports(cmd, evt);
+		break;
+#endif /* CONFIG_BT_CTLR_VS_LE_ADV_REPORT_CHAN_IDX */
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 	case BT_OCF(BT_HCI_OP_VS_MESH):
@@ -6659,6 +6679,68 @@ static inline void le_mesh_scan_report(struct pdu_adv *adv,
 }
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
+#if defined(CONFIG_BT_CTLR_VS_LE_ADV_REPORT_CHAN_IDX)
+static void le_vs_advertising_report(struct pdu_data *pdu_data,
+				     struct node_rx_pdu *node_rx,
+				     struct net_buf *buf,
+				     uint8_t data_len, int8_t rssi)
+{
+	const uint8_t c_adv_type[] = { 0x00, 0x01, 0x03, 0xff, 0x04,
+				    0xff, 0x02 };
+	struct net_buf *evt_buf;
+	struct bt_hci_evt_vs_le_advertising_report *sep;
+	struct pdu_adv *adv = (void *)pdu_data;
+	struct bt_hci_evt_vs_le_advertising_info *adv_info;
+	uint8_t info_len;
+	int8_t *prssi;
+	uint8_t *pchan;
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	uint8_t rl_idx = node_rx->rx_ftr.rl_idx;
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+
+	if (!(vs_events_mask & BT_EVT_MASK_VS_LE_ADV_REPORT)) {
+		return;
+	}
+
+	evt_buf = bt_buf_get_rx(BT_BUF_EVT, K_NO_WAIT);
+	if (!evt_buf) {
+		return;
+	}
+
+	info_len = sizeof(struct bt_hci_evt_vs_le_advertising_info) + data_len +
+		   sizeof(*prssi) + sizeof(*pchan);
+	sep = vs_event(evt_buf, BT_HCI_EVT_VS_LE_ADV_REPORT,
+		       sizeof(*sep) + info_len);
+
+	sep->num_reports = 1U;
+	adv_info = (void *)(((uint8_t *)sep) + sizeof(*sep));
+	adv_info->evt_type = c_adv_type[adv->type];
+
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	if (rl_idx < ll_rl_size_get()) {
+		ll_rl_id_addr_get(rl_idx, &adv_info->addr.type,
+				  &adv_info->addr.a.val[0]);
+		MARK_AS_IDENTITY_ADDR(adv_info->addr.type);
+	} else {
+#else
+	if (1) {
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+		adv_info->addr.type = adv->tx_addr;
+		memcpy(&adv_info->addr.a.val[0], &adv->adv_ind.addr[0],
+		       sizeof(bt_addr_t));
+	}
+
+	adv_info->length = data_len;
+	memcpy(&adv_info->data[0], &adv->adv_ind.data[0], data_len);
+	prssi = &adv_info->data[0] + data_len;
+	*prssi = rssi;
+	pchan = (uint8_t *)(prssi + 1);
+	*pchan = node_rx->rx_ftr.adv_chan_idx;
+
+	net_buf_frag_add(buf, evt_buf);
+}
+#endif /* CONFIG_BT_CTLR_VS_LE_ADV_REPORT_CHAN_IDX */
+
 static void le_advertising_report(struct pdu_data *pdu_data,
 				  struct node_rx_pdu *node_rx,
 				  struct net_buf *buf)
@@ -6712,8 +6794,17 @@ static void le_advertising_report(struct pdu_data *pdu_data,
 	}
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
+	if (adv->type != PDU_ADV_TYPE_DIRECT_IND) {
+		data_len = (adv->len - BDADDR_SIZE);
+	} else {
+		data_len = 0U;
+	}
+
 	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
 	    !(le_event_mask & BT_EVT_MASK_LE_ADVERTISING_REPORT)) {
+#if defined(CONFIG_BT_CTLR_VS_LE_ADV_REPORT_CHAN_IDX)
+		le_vs_advertising_report(pdu_data, node_rx, buf, data_len, rssi);
+#endif /* CONFIG_BT_CTLR_VS_LE_ADV_REPORT_CHAN_IDX */
 		return;
 	}
 
@@ -6724,11 +6815,6 @@ static void le_advertising_report(struct pdu_data *pdu_data,
 	}
 #endif /* CONFIG_BT_CTLR_DUP_FILTER_LEN > 0 */
 
-	if (adv->type != PDU_ADV_TYPE_DIRECT_IND) {
-		data_len = (adv->len - BDADDR_SIZE);
-	} else {
-		data_len = 0U;
-	}
 	info_len = sizeof(struct bt_hci_evt_le_advertising_info) + data_len +
 		   sizeof(*prssi);
 	sep = meta_evt(buf, BT_HCI_EVT_LE_ADVERTISING_REPORT,
@@ -6761,6 +6847,10 @@ static void le_advertising_report(struct pdu_data *pdu_data,
 	/* RSSI */
 	prssi = &adv_info->data[0] + data_len;
 	*prssi = rssi;
+
+#if defined(CONFIG_BT_CTLR_VS_LE_ADV_REPORT_CHAN_IDX)
+	le_vs_advertising_report(pdu_data, node_rx, buf, data_len, rssi);
+#endif /* CONFIG_BT_CTLR_VS_LE_ADV_REPORT_CHAN_IDX */
 }
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)

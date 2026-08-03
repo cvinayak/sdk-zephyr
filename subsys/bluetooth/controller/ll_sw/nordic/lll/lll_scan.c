@@ -1633,6 +1633,10 @@ static int isr_rx_scan_report(struct lll_scan *lll, uint8_t devmatch_ok,
 		node_rx->hdr.type = NODE_RX_TYPE_REPORT;
 	}
 
+#if defined(CONFIG_BT_CTLR_VS_LE_ADV_REPORT_CHAN_IDX)
+	node_rx->rx_ftr.adv_chan_idx = 37U + lll->chan;
+#endif /* CONFIG_BT_CTLR_VS_LE_ADV_REPORT_CHAN_IDX */
+
 	node_rx->rx_ftr.rssi = (rssi_ready) ? radio_rssi_get() :
 						  BT_HCI_LE_RSSI_NOT_AVAILABLE;
 #if defined(CONFIG_BT_CTLR_PRIVACY)
