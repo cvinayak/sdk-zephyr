@@ -1052,6 +1052,7 @@ config BT_CTLR_RADIO_TIMER_ISR
 		   SOC_COMPATIBLE_NRF53X || \
 		   SOC_COMPATIBLE_NRF54LX || \
 		   SOC_SERIES_NRF54H
+	default y
 	help
 	  Enables use of Radio timer ISR callback.
 
@@ -1083,7 +1084,6 @@ config BT_CTLR_SW_SWITCH_SINGLE_TIMER
 		    SOC_COMPATIBLE_NRF53X || \
 		    SOC_COMPATIBLE_NRF54LX || \
 		    SOC_SERIES_NRF54H)
-	default y if SOC_COMPATIBLE_NRF54LX
 	help
 	  Implement the tIFS Trx SW switch with the same TIMER
 	  instance, as the one used for Bluetooth event timing. Requires

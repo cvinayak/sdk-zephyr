@@ -42,8 +42,8 @@
 /* Active connection in peripheral role with extended scanning on 1M only, scheduling and receiving
  * auxiliary PDUs.
  */
-#define EVENT_OVERHEAD_START_US       428 /* 14 RTC ticks */
-#define EVENT_OVERHEAD_RESUME_US      123
+#define EVENT_OVERHEAD_START_US       184 /* 4 RTC ticks */
+#define EVENT_OVERHEAD_RESUME_US      92
 #endif /* !CONFIG_BT_CTLR_PHY_CODED */
 #else /* !CONFIG_BT_OBSERVER */
 /* Simultaneous 3 extended advertising sets, calculating aux offsets.
