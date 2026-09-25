@@ -2499,6 +2499,17 @@ struct bt_le_scan_recv_info {
 	uint8_t secondary_phy;
 };
 
+#if defined(CONFIG_BT_HCI_VS_ADV_REPORT_CHAN_IDX)
+/**
+ * @brief Configure parsing of channel index in standard LE Advertising Reports.
+ *
+ * Must be called when the controller feature is enabled or disabled at runtime.
+ *
+ * @param enabled True when the controller appends channel index after RSSI.
+ */
+void bt_hci_le_adv_report_chan_idx_set_enabled(bool enabled);
+#endif /* CONFIG_BT_HCI_VS_ADV_REPORT_CHAN_IDX */
+
 /** Listener context for (LE) scanning. */
 struct bt_le_scan_cb {
 

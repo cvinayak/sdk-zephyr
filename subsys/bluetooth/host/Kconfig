@@ -919,11 +919,12 @@ config BT_BACKGROUND_SCAN_WINDOW
 	range 4 16384
 
 config BT_HCI_VS_ADV_REPORT_CHAN_IDX
-	bool "Support Zephyr Vendor Specific HCI LE Advertising Report with Channel Index"
+	bool "Support channel index in standard HCI LE Advertising Report"
 	help
-	  Zephyr Vendor Specific HCI LE Advertising Report is parsed and the bt_le_scan_recv_info
-	  parameter in the scan callback will provide the channel index the advertising PDU was
-	  received.
+	  When enabled by the SoftDevice Controller vendor specific command, the optional
+	  channel index octet appended after RSSI in standard LE Advertising Report events
+	  is parsed and the bt_le_scan_recv_info parameter in the scan callback will
+	  provide the channel index the advertising PDU was received on.
 
 config BT_EXT_SCAN_BUF_SIZE
 	int "Maximum advertisement report size"

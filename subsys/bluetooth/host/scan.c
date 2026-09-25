@@ -1755,14 +1755,22 @@ static void le_adv_report(struct net_buf *buf, bool has_chan_idx)
 	}
 }
 
+#if defined(CONFIG_BT_HCI_VS_ADV_REPORT_CHAN_IDX)
+static atomic_t le_adv_report_chan_idx_enabled;
+
+void bt_hci_le_adv_report_chan_idx_set_enabled(bool enabled)
+{
+	atomic_set(&le_adv_report_chan_idx_enabled, enabled ? 1 : 0);
+}
+#endif /* CONFIG_BT_HCI_VS_ADV_REPORT_CHAN_IDX */
+
 void bt_hci_le_adv_report(struct net_buf *buf)
 {
+#if defined(CONFIG_BT_HCI_VS_ADV_REPORT_CHAN_IDX)
+	le_adv_report(buf, atomic_get(&le_adv_report_chan_idx_enabled) != 0);
+#else
 	le_adv_report(buf, false);
-}
-
-void bt_hci_le_vs_adv_report(struct net_buf *buf)
-{
-	le_adv_report(buf, true);
+#endif /* CONFIG_BT_HCI_VS_ADV_REPORT_CHAN_IDX */
 }
 
 static bool valid_le_scan_param(const struct bt_le_scan_param *param)
